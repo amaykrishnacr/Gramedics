@@ -1,29 +1,47 @@
-🌿 **Gramedics – Smarter Healthcare for Everyone**
+🏥 **Gramedics** - Your Complete Healthcare Companion
 
-🚀 Gramedics is your one-stop digital healthcare companion, designed to make healthcare accessible, affordable, and inclusive – especially for rural India.
+Revolutionizing healthcare accessibility with intelligent diagnostics, real-time tracking, and emergency care - all in one powerful platform.
 
-✨ **Features at a Glance**
+🌟 **What Makes Gramedics Special?**
+Gramedics isn't just another health app - it's your digital health guardian that combines cutting-edge technology with compassionate care to keep you and your loved ones healthy, informed, and safe.
 
-🩺 **AI-Powered Symptom Diagnosis**
-Enter your symptoms and get a quick, intelligent health assessment – helping you take the first step toward care.
+⚡ **<ins>Core Features</ins>**
 
-🗺️ **Find Nearby Doctors & Hospitals (OpenStreetMap API)**
-Instantly locate trusted doctors, clinics, and hospitals around you.
+🗺️ **Smart Healthcare Discovery**
 
-📊 **Health Statistics Tracker**
-Monitor your vitals, habits, and lifestyle stats in one place – stay on top of your well-being.
+Find nearby doctors & hospitals with integrated OpenStreetMap API
+Distance-based recommendations for urgent and routine care
 
-🚨 **Emergency SOS**
-With just one tap, alert family, friends, or nearby hospitals during a medical emergency.
+📊 **Personal Health Analytics**
 
-📢 **Government Medical Drive Notifications**
-Stay updated with nearby health camps, vaccination drives, and government healthcare initiatives.
+Comprehensive health statistics tracking
+Visual dashboards for vital signs, medication adherence, and symptoms
 
-👨‍👩‍👧‍👦 **Family Health Records**
-Securely store and manage health information for the whole family, accessible anytime.
+🚨 **Emergency SOS System**
 
-💉 **Vaccination Tracking**
-Track vaccination schedules, receive reminders, and ensure you never miss an important shot.
+One-tap emergency assistance with GPS location sharing
+Automatic emergency contact notifications
+Integration with local emergency services
 
-🤖 **Smart Chatbot**
-Got a health query? Our chatbot answers common medical questions instantly.
+📢 **Smart Health Notifications**
+
+Real-time alerts for nearby government medical drives
+Vaccination reminders and health screening notifications
+Community health updates and outbreak warnings
+
+👨‍👩‍👧‍👦 **Family Health Hub**
+
+Centralized family health records management
+Multi-user profiles with privacy controls
+Health history timeline for all family members
+
+💉 **Intelligent Vaccination Tracker**
+
+Complete immunization records for all ages
+Smart reminders for upcoming vaccinations
+
+🤖 **24/7 Healthcare Chatbot**
+
+Instant answers to common health queries
+Medication information and interaction checker
+First aid guidance and health tips
