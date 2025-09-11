@@ -94,7 +94,7 @@
 
   <div class="hero">
     <h2>Connecting Villages to Care</h2>
-    <p class="small-muted">A single-page health app — trackers, services, and an AI chatbot.</p>
+    <p class="small-muted">⭐A single-page health app — trackers, services, and an AI chatbot!⭐</p>
   </div>
 
   <main>
@@ -451,7 +451,7 @@
     { symptoms: ['abdominal pain','vomiting'], suggestion: 'If severe or persistent, seek medical attention.' },
     { symptoms: ['headache','stiff neck','fever'], suggestion: 'Red flag — urgent medical evaluation recommended.' }
   ];
-  $('card-symptoms').addEventListener('click', ()=> openPopup($('symptomPopup')));
+  $('card-symptoms').addEventListener('click', ()=> {window.location.href = 'nearby.html'});
   $('close-symptom').addEventListener('click', ()=> closePopup($('symptomPopup')));
   $('symptoms-analyze').addEventListener('click', ()=> {
     const raw = $('symptoms-input').value.trim().toLowerCase();
