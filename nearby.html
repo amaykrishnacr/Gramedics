@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Symptom Diagnosis Chatbot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* Heartbeat background animation */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            /* Semi-transparent heart SVG with a more visible color */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23F43F5E' fill-opacity='0.4'%3E%3Cpath d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: center center; /* Centered in the viewport */
+            background-size: 120vh; /* Made the heart significantly larger */
+            animation: heartbeat 2s infinite;
+        }
+        
+        @keyframes heartbeat {
+            0% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+            50% {
+                transform: scale(1.05);
+                opacity: 0.6;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 450px; /* Reduced the maximum width */
+            height: 70vh; /* Reduced the height */
+            display: flex;
+            flex-direction: column;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            background-color: #E0F7FA;
+        }
+
+        .chat-history {
+            flex-grow: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            scrollbar-width: thin;
+            scrollbar-color: #d1d5db #E0F7FA;
+        }
+
+        .chat-history::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-history::-webkit-scrollbar-track {
+            background: #E0F7FA;
+        }
+
+        .chat-history::-webkit-scrollbar-thumb {
+            background-color: #D1D5DB;
+            border-radius: 20px;
+            border: 3px solid #E0F7FA;
+        }
+
+        .message-bubble {
+            max-width: 80%;
+            padding: 0.75rem 1rem;
+            border-radius: 1.25rem;
+        }
+
+        .user-message {
+            background-color: #FBBF24; /* A golden yellow */
+            color: #4B5563; /* Dark gray for contrast */
+            align-self: flex-end;
+            border-bottom-right-radius: 0.25rem;
+        }
+
+        .bot-message {
+            background-color: #E5E7EB;
+            color: #1F2937;
+            align-self: flex-start;
+            border-bottom-left-radius: 0.25rem;
+        }
+
+        .disclaimer-text {
+            font-size: 0.875rem;
+            color: #6B7280;
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .chat-header {
+            background-color: #1A2B5B; /* Deep Indian Blue */
+            color: #E5E7EB; /* Light gray */
+            padding: 1.5rem;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.5rem;
+            border-top-left-radius: 1.5rem;
+            border-top-right-radius: 1.5rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .chat-header::before, .chat-header::after {
+            content: '';
+            width: 30px;
+            height: 30px;
+            /* Semi-transparent blue heart icon */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2390cdf4' fill-opacity='0.5'%3E%3Cpath d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/%3E%3C/svg%3E");
+            background-size: cover;
+            margin: 0 10px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <button onclick="window.history.back()" style="position: fixed; top: 20px; left: 20px; background-color: blue; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer;">
+    ← Go Back
+    </button>
+
+    <div class="chat-container">
+        <!-- Chatbot Header -->
+        <header class="chat-header">
+            Symptom Diagnosis
+        </header>
+
+        <!-- Chat History -->
+        <div id="chatHistory" class="chat-history">
+            <!-- Messages will be injected here by JavaScript -->
+        </div>
+
+        <!-- Input Form -->
+        <form id="chatForm" class="p-4 bg-gray-200 flex items-center gap-4">
+            <input
+                id="messageInput"
+                type="text"
+                placeholder="Enter symptoms (e.g., headache, fever, cough)"
+                class="flex-grow p-3 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+            />
+            <button
+                type="submit"
+                class="bg-orange-500 text-white rounded-full p-3 w-12 h-12 flex justify-center items-center hover:bg-orange-600 transition duration-200"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+            </button>
+        </form>
+    </div>
+
+    <script>
+        // Get references to DOM elements
+        const chatHistory = document.getElementById('chatHistory');
+        const chatForm = document.getElementById('chatForm');
+        const messageInput = document.getElementById('messageInput');
+
+        // Expanded symptom-to-disease mapping with multiple diseases and chances
+        const diseaseData = new Map([
+            // Common Symptoms
+            ['headache', [
+                { name: 'Tension Headache', info: 'A common headache from muscle tension.', chance: 'High' },
+                { name: 'Migraine', info: 'A severe headache often accompanied by nausea.', chance: 'Medium' },
+                { name: 'Sinusitis', info: 'Inflammation of the sinuses.', chance: 'Low' }
+            ]],
+            ['fever', [
+                { name: 'Common Cold', info: 'A viral infection of the upper respiratory tract.', chance: 'High' },
+                { name: 'Influenza (Flu)', info: 'A contagious respiratory illness.', chance: 'High' },
+                { name: 'Malaria', info: 'A mosquito-borne infectious disease.', chance: 'Medium' }
+            ]],
+            ['high temperature', [
+                { name: 'Common Cold', info: 'A viral infection of the upper respiratory tract.', chance: 'High' },
+                { name: 'Influenza (Flu)', info: 'A contagious respiratory illness.', chance: 'High' },
+                { name: 'Malaria', info: 'A mosquito-borne infectious disease.', chance: 'Medium' }
+            ]],
+            ['hotness', [
+                { name: 'Common Cold', info: 'A viral infection of the upper respiratory tract.', chance: 'High' },
+                { name: 'Influenza (Flu)', info: 'A contagious respiratory illness.', chance: 'High' },
+                { name: 'Malaria', info: 'A mosquito-borne infectious disease.', chance: 'Medium' }
+            ]],
+            ['stomach ache', [
+                { name: 'Gastroenteritis', info: 'Inflammation of the stomach and intestines.', chance: 'High' },
+                { name: 'Food Poisoning', info: 'An illness caused by contaminated food.', chance: 'Medium' },
+                { name: 'Ulcer', info: 'A sore in the lining of the stomach.', chance: 'Low' }
+            ]],
+            ['stomach pain', [
+                { name: 'Gastroenteritis', info: 'Inflammation of the stomach and intestines.', chance: 'High' },
+                { name: 'Food Poisoning', info: 'An illness caused by contaminated food.', chance: 'Medium' },
+                { name: 'Ulcer', info: 'A sore in the lining of the stomach.', chance: 'Low' }
+            ]],
+            ['abdominal pain', [
+                { name: 'Gastroenteritis', info: 'Inflammation of the stomach and intestines.', chance: 'High' },
+                { name: 'Food Poisoning', info: 'An illness caused by contaminated food.', chance: 'Medium' },
+                { name: 'Ulcer', info: 'A sore in the lining of the stomach.', chance: 'Low' }
+            ]],
+            // Vague keywords
+            ['breathing problem', [
+                { name: 'Asthma', info: 'A widespread respiratory condition, worsened by environmental triggers.', chance: 'High' },
+                { name: 'Chronic Obstructive Pulmonary Disease (COPD)', info: 'Exacerbated by air pollution from biomass fuels and tobacco use.', chance: 'High' },
+                { name: 'Lower Respiratory Infections', info: 'A major killer of infants and the elderly, often worsened by indoor air pollution.', chance: 'Medium' }
+            ]],
+            ['feeling heavy', [
+                { name: 'Ischemic Heart Disease', info: 'A growing cause of death, reflecting changing diets and lifestyles.', chance: 'High' },
+                { name: 'Hypertension (High Blood Pressure)', info: 'Often undiagnosed and untreated, it\'s a major risk factor for heart disease and stroke.', chance: 'Medium' },
+                { name: 'Anaemia', info: 'Affects a vast majority of women and children, contributing to fatigue and other health issues.', chance: 'Medium' }
+            ]],
+            ['body pain', [
+                { name: 'Influenza (Flu)', info: 'A contagious respiratory illness with common symptoms including body aches.', chance: 'High' },
+                { name: 'Malaria', info: 'A mosquito-borne infectious disease with symptoms including fever and body aches.', chance: 'High' },
+                { name: 'Dengue', info: 'A widespread mosquito-borne illness with high rates of infection, often causing severe body aches.', chance: 'Medium' },
+                { name: 'Musculoskeletal Disorders', info: 'Conditions like osteoarthritis and rheumatoid arthritis are common, particularly among those engaged in strenuous physical labor.', chance: 'Medium' }
+            ]],
+            ['body ache', [
+                { name: 'Influenza (Flu)', info: 'A contagious respiratory illness with common symptoms including body aches.', chance: 'High' },
+                { name: 'Malaria', info: 'A mosquito-borne infectious disease with symptoms including fever and body aches.', chance: 'High' },
+                { name: 'Dengue', info: 'A widespread mosquito-borne illness with high rates of infection, often causing severe body aches.', chance: 'Medium' },
+                { name: 'Musculoskeletal Disorders', info: 'Conditions like osteoarthritis and rheumatoid arthritis are common, particularly among those engaged in strenuous physical labor.', chance: 'Medium' }
+            ]],
+            ['muscle pain', [
+                { name: 'Influenza (Flu)', info: 'A contagious respiratory illness with common symptoms including body aches.', chance: 'High' },
+                { name: 'Malaria', info: 'A mosquito-borne infectious disease with symptoms including fever and body aches.', chance: 'High' },
+                { name: 'Dengue', info: 'A widespread mosquito-borne illness with high rates of infection, often causing severe body aches.', chance: 'Medium' },
+                { name: 'Musculoskeletal Disorders', info: 'Conditions like osteoarthritis and rheumatoid arthritis are common, particularly among those engaged in strenuous physical labor.', chance: 'Medium' }
+            ]],
+            ['weakness', [
+                { name: 'Anaemia', info: 'A very common condition, especially among women and children, causing fatigue and weakness.', chance: 'High' },
+                { name: 'Nutritional Deficiencies', info: 'Lack of essential vitamins and minerals can lead to weakness.', chance: 'Medium' },
+                { name: 'General Fatigue', info: 'Can be caused by lack of sleep, stress, or minor viral infections.', chance: 'High' }
+            ]],
+            ['not feeling well', [
+                { name: 'Common Cold', info: 'A general term for minor viral infections with a range of symptoms.', chance: 'High' },
+                { name: 'Dehydration', info: 'Lack of proper hydration can lead to feeling unwell and fatigued.', chance: 'Medium' },
+                { name: 'Stress/Burnout', info: 'Mental and physical exhaustion can lead to a general feeling of being unwell.', chance: 'Low' }
+            ]],
+            ['joint pain', [
+                { name: 'Dengue', info: 'Often referred to as "breakbone fever" due to severe joint pain.', chance: 'High' },
+                { name: 'Chikungunya', info: 'A viral disease causing severe, long-lasting joint pain.', chance: 'High' },
+                { name: 'Arthritis', info: 'Inflammation of one or more joints, causing pain and stiffness.', chance: 'Medium' }
+            ]],
+            ['eye redness', [
+                { name: 'Conjunctivitis (Pink Eye)', info: 'Inflammation of the outer membrane of your eye.', chance: 'High' },
+                { name: 'Allergies', info: 'Caused by an allergic reaction to pollen or dust.', chance: 'High' },
+                { name: 'Dry Eye Syndrome', info: 'Lack of proper eye lubrication.', chance: 'Medium' }
+            ]],
+            ['eye pain', [
+                { name: 'Conjunctivitis (Pink Eye)', info: 'Inflammation of the outer membrane of your eye.', chance: 'High' },
+                { name: 'Migraine', info: 'A severe headache that can cause eye pain.', chance: 'Medium' },
+                { name: 'Sinusitis', info: 'Inflammation of the sinuses which can cause pressure and pain behind the eyes.', chance: 'Low' }
+            ]],
+            ['stuffy nose', [
+                { name: 'Common Cold', info: 'A viral infection of the nose and throat.', chance: 'High' },
+                { name: 'Sinusitis', info: 'Inflammation of the sinuses leading to congestion.', chance: 'High' },
+                { name: 'Allergies', info: 'A common cause of nasal congestion from environmental triggers.', chance: 'Medium' }
+            ]],
+            
+            // New "Pain in..." entries
+            ['pain in head', [
+                { name: 'Tension Headache', info: 'A common headache from muscle tension.', chance: 'High' },
+                { name: 'Migraine', info: 'A severe headache often accompanied by nausea.', chance: 'Medium' },
+                { name: 'Sinusitis', info: 'Inflammation of the sinuses.', chance: 'Low' }
+            ]],
+            ['pain in chest', [
+                { name: 'Muscle Strain', info: 'Pain from overexertion or injury to chest muscles.', chance: 'High' },
+                { name: 'Pneumonia', info: 'An infection that inflames the air sacs in one or both lungs.', chance: 'High' },
+                { name: 'Heart Attack', info: 'A serious condition where blood flow to the heart is blocked. Seek immediate medical attention.', chance: 'Medium' }
+            ]],
+            ['pain in stomach', [
+                { name: 'Gastroenteritis', info: 'Inflammation of the stomach and intestines.', chance: 'High' },
+                { name: 'Food Poisoning', info: 'An illness caused by contaminated food.', chance: 'Medium' },
+                { name: 'Ulcer', info: 'A sore in the lining of the stomach.', chance: 'Low' }
+            ]],
+            ['pain in abdomen', [
+                { name: 'Gastroenteritis', info: 'Inflammation of the stomach and intestines.', chance: 'High' },
+                { name: 'Food Poisoning', info: 'An illness caused by contaminated food.', chance: 'Medium' },
+                { name: 'Ulcer', info: 'A sore in the lining of the stomach.', chance: 'Low' }
+            ]],
+            ['pain in back', [
+                { name: 'Muscle Strain', info: 'An injury to the muscles in your back.', chance: 'High' },
+                { name: 'Sciatica', info: 'Pain that travels along the path of the sciatic nerve.', chance: 'Medium' },
+                { name: 'Herniated Disc', info: 'A condition where a disc in your spine is ruptured.', chance: 'Low' }
+            ]],
+            ['pain in joint', [
+                { name: 'Dengue', info: 'Often referred to as "breakbone fever" due to severe joint pain.', chance: 'High' },
+                { name: 'Chikungunya', info: 'A viral disease causing severe, long-lasting joint pain.', chance: 'High' },
+                { name: 'Arthritis', info: 'Inflammation of one or more joints, causing pain and stiffness.', chance: 'Medium' }
+            ]],
+            ['pain in leg', [
+                { name: 'Muscle Cramp', info: 'A sudden, involuntary contraction of a muscle.', chance: 'High' },
+                { name: 'Shin Splints', info: 'Pain along the tibia bone.', chance: 'Medium' },
+                { name: 'Deep Vein Thrombosis (DVT)', info: 'A serious condition where a blood clot forms in a deep vein.', chance: 'Low' }
+            ]],
+            ['pain in arm', [
+                { name: 'Muscle Strain', info: 'An injury to a muscle in your arm.', chance: 'High' },
+                { name: 'Carpal Tunnel Syndrome', info: 'A condition causing numbness and tingling in the hand and arm.', chance: 'Medium' },
+                { name: 'Tendonitis', info: 'Inflammation of a tendon.', chance: 'Medium' }
+            ]],
+            // New "Pain in [Organ]" entries
+            ['pain in kidney', [
+                { name: 'Kidney Stones', info: 'Small, hard deposits that form in your kidneys.', chance: 'High' },
+                { name: 'Urinary Tract Infection (UTI)', info: 'An infection in the urinary system that can spread to the kidneys.', chance: 'Medium' },
+                { name: 'Pyelonephritis', info: 'A serious bacterial infection of the kidneys.', chance: 'High' }
+            ]],
+            ['pain in liver', [
+                { name: 'Hepatitis', info: 'Inflammation of the liver, often caused by a virus.', chance: 'High' },
+                { name: 'Fatty Liver Disease', info: 'An accumulation of fat in the liver, often related to lifestyle.', chance: 'Medium' },
+                { name: 'Liver Cirrhosis', info: 'Late-stage scarring of the liver caused by various liver diseases.', chance: 'Low' }
+            ]],
+            ['pain in appendix', [
+                { name: 'Appendicitis', info: 'Inflammation of the appendix, a serious condition that requires immediate medical attention.', chance: 'High' },
+                { name: 'Gastroenteritis', info: 'Inflammation of the stomach and intestines that can mimic appendicitis.', chance: 'Medium' }
+            ]],
+            ['pain in heart', [
+                { name: 'Angina', info: 'Chest pain or discomfort caused by reduced blood flow to the heart muscle.', chance: 'High' },
+                { name: 'Panic Attack', info: 'Anxiety symptoms that can mimic a heart attack.', chance: 'Medium' },
+                { name: 'Heartburn/Acid Reflux', info: 'A burning sensation in your chest that can feel like heart pain.', chance: 'High' }
+            ]],
+            ['pain in lung', [
+                { name: 'Pleurisy', info: 'Inflammation of the tissue lining the lungs and chest cavity.', chance: 'High' },
+                { name: 'Pneumonia', info: 'An infection that inflames the air sacs in one or both lungs.', chance: 'High' },
+                { name: 'Bronchitis', info: 'Inflammation of the lining of your bronchial tubes.', chance: 'Medium' }
+            ]],
+            // Infectious Diseases
+            ['diarrhea', [
+                { name: 'Diarrhoeal Diseases', info: 'A primary cause of morbidity and mortality.', chance: 'High' },
+                { name: 'Cholera', info: 'An acute diarrheal disease.', chance: 'Medium' },
+                { name: 'Typhoid Fever', info: 'A common bacterial infection.', chance: 'Low' }
+            ]],
+            ['tuberculosis', [
+                { name: 'Tuberculosis (TB)', info: 'A bacterial infection affecting the lungs.', chance: 'High' },
+                { name: 'Chronic Obstructive Pulmonary Disease (COPD)', info: 'Lung disease worsened by air pollution.', chance: 'Medium' }
+            ]],
+            ['malaria', [
+                { name: 'Malaria', info: 'Endemic in many regions, causing regular outbreaks.', chance: 'High' },
+                { name: 'Dengue', info: 'A widespread mosquito-borne illness.', chance: 'Medium' }
+            ]],
+            ['dengue', [
+                { name: 'Dengue', info: 'Widespread mosquito-borne illness with high rates of infection.', chance: 'High' },
+                { name: 'Malaria', info: 'Endemic in many regions.', chance: 'Medium' }
+            ]],
+            ['typhoid', [
+                { name: 'Typhoid Fever', info: 'A common bacterial infection from contaminated food and water.', chance: 'High' },
+                { name: 'Gastroenteritis', info: 'Inflammation of the stomach and intestines.', chance: 'Low' }
+            ]],
+            ['hepatitis a', [
+                { name: 'Hepatitis A and E', info: 'Viral liver infections spread via the fecal-oral route.', chance: 'High' }
+            ]],
+            ['cough', [
+                { name: 'Lower Respiratory Infections', info: 'A major killer of infants and the elderly.', chance: 'High' },
+                { name: 'Bronchitis', info: 'Inflammation of your bronchial tubes.', chance: 'High' },
+                { name: 'Tuberculosis (TB)', info: 'A serious bacterial infection affecting the lungs.', chance: 'Medium' }
+            ]],
+            ['worms', [
+                { name: 'Worm Infestations', info: 'Widespread due to lack of sanitation.', chance: 'High' }
+            ]],
+            ['leptospirosis', [
+                { name: 'Leptospirosis', info: 'A bacterial disease linked to agricultural activities.', chance: 'High' }
+            ]],
+            ['scabies', [
+                { name: 'Scabies', info: 'A highly contagious skin condition caused by mites.', chance: 'High' },
+                { name: 'Fungal Skin Infections', info: 'Ringworm and other fungal infections.', chance: 'Medium' }
+            ]],
+            ['fungal infection', [
+                { name: 'Fungal Skin Infections', info: 'Common due to humidity and poor hygiene.', chance: 'High' },
+                { name: 'Scabies', info: 'A highly contagious skin condition.', chance: 'Medium' }
+            ]],
+            ['encephalitis', [
+                { name: 'Japanese Encephalitis', info: 'A mosquito-borne viral brain infection.', chance: 'High' }
+            ]],
+            ['rabies', [
+                { name: 'Rabies', info: 'A deadly viral disease.', chance: 'High' }
+            ]],
+            ['measles', [
+                { name: 'Measles', info: 'Outbreaks still occur in underserved areas.', chance: 'High' }
+            ]],
+            ['hepatitis b', [
+                { name: 'Hepatitis B and C', info: 'Chronic viral infections leading to liver disease.', chance: 'High' }
+            ]],
+            ['cholera', [
+                { name: 'Cholera', info: 'An acute diarrheal disease that can cause severe dehydration.', chance: 'High' },
+                { name: 'Diarrhoeal Diseases', info: 'A primary cause of morbidity and mortality.', chance: 'Medium' }
+            ]],
+            ['typhus', [
+                { name: 'Typhus', info: 'A group of bacterial diseases transmitted by lice or fleas.', chance: 'High' }
+            ]],
+            ['gastroenteritis', [
+                { name: 'Gastroenteritis', info: 'A broad term for inflammation of the stomach and intestines.', chance: 'High' },
+                { name: 'Food Poisoning', info: 'An illness caused by eating contaminated food.', chance: 'Medium' }
+            ]],
+            ['brucellosis', [
+                { name: 'Brucellosis', info: 'A bacterial infection transmitted from animals to humans.', chance: 'High' }
+            ]],
+            ['tetanus', [
+                { name: 'Tetanus', info: 'A bacterial infection, though preventable by vaccination.', chance: 'High' }
+            ]],
+            
+            // Nutritional and Maternal/Child Health Issues
+            ['anaemia', [
+                { name: 'Anaemia', info: 'Affects a vast majority of women and children, contributing to fatigue.', chance: 'High' }
+            ]],
+            ['malnutrition', [
+                { name: 'Protein-Energy Malnutrition', info: 'A severe form of undernutrition.', chance: 'High' }
+            ]],
+            ['vitamin a deficiency', [
+                { name: 'Vitamin A Deficiency', info: 'A major cause of preventable blindness.', chance: 'High' }
+            ]],
+            ['iodine deficiency', [
+                { name: 'Iodine Deficiency Disorders (IDDs)', info: 'Can lead to goiter and mental impairment.', chance: 'High' }
+            ]],
+            ['maternal mortality', [
+                { name: 'Maternal Mortality and Morbidity', info: 'High rates of complications during pregnancy.', chance: 'High' }
+            ]],
+            ['infant mortality', [
+                { name: 'Infant and Child Mortality', info: 'A higher rate of deaths from preventable causes.', chance: 'High' }
+            ]],
+            ['stunting', [
+                { name: 'Chronic Malnutrition (Stunting)', info: 'Impacts children\'s long-term development.', chance: 'High' }
+            ]],
+            ['postpartum haemorrhage', [
+                { name: 'Postpartum Haemorrhage', info: 'A leading cause of maternal death.', chance: 'High' }
+            ]],
+            ['low birth weight', [
+                { name: 'Preterm Birth and Low Birth Weight', info: 'A major contributor to infant mortality.', chance: 'High' }
+            ]],
+
+            // Non-Communicable and Chronic Diseases
+            ['hypertension', [
+                { name: 'Hypertension (High Blood Pressure)', info: 'Often undiagnosed and untreated.', chance: 'High' },
+                { name: 'Stroke', info: 'Rising prevalence is linked to hypertension.', chance: 'Medium' },
+                { name: 'Chronic Kidney Disease', info: 'Often a complication of diabetes and hypertension.', chance: 'Medium' }
+            ]],
+            ['heart disease', [
+                { name: 'Ischemic Heart Disease', info: 'A growing cause of death.', chance: 'High' },
+                { name: 'Hypertension', info: 'A major risk factor for heart disease.', chance: 'Medium' }
+            ]],
+            ['stroke', [
+                { name: 'Stroke', info: 'Linked to hypertension and diabetes.', chance: 'High' },
+                { name: 'Hypertension', info: 'High blood pressure is a major risk factor.', chance: 'High' }
+            ]],
+            ['diabetes', [
+                { name: 'Diabetes Mellitus (Type 2)', info: 'A significant and growing burden.', chance: 'High' },
+                { name: 'Chronic Kidney Disease', info: 'Often a complication of diabetes.', chance: 'Medium' }
+            ]],
+            ['copd', [
+                { name: 'Chronic Obstructive Pulmonary Disease (COPD)', info: 'Exacerbated by air pollution.', chance: 'High' }
+            ]],
+            ['asthma', [
+                { name: 'Asthma', info: 'A widespread respiratory condition.', chance: 'High' },
+                { name: 'Chronic Obstructive Pulmonary Disease (COPD)', info: 'A more severe lung disease.', chance: 'Low' }
+            ]],
+            ['cancer', [
+                { name: 'Oral and Lung Cancers', info: 'Linked to tobacco and betel nut use.', chance: 'High' }
+            ]],
+            ['kidney disease', [
+                { name: 'Chronic Kidney Disease', info: 'On the rise, often a complication of diabetes and hypertension.', chance: 'High' }
+            ]],
+            ['arthritis', [
+                { name: 'Musculoskeletal Disorders', info: 'Common, particularly for those in strenuous labor.', chance: 'High' }
+            ]],
+            ['anxiety', [
+                { name: 'Mental and Neurological Disorders', info: 'Conditions like depression, anxiety, and dementia.', chance: 'High' }
+            ]],
+
+            // Other Significant Health Issues
+            ['road injury', [
+                { name: 'Road Traffic Injuries', info: 'A major cause of death and disability.', chance: 'High' }
+            ]],
+            ['poisoning', [
+                { name: 'Poisoning', info: 'Accidental ingestion of pesticides and other chemicals.', chance: 'High' }
+            ]],
+            ['falls', [
+                { name: 'Falls and Occupational Injuries', info: 'A high rate of injuries from farm work.', chance: 'High' }
+            ]],
+            ['cataracts', [
+                { name: 'Cataracts', info: 'A leading cause of preventable blindness.', chance: 'High' }
+            ]],
+            ['glaucoma', [
+                { name: 'Glaucoma', info: 'A serious eye condition that can lead to permanent blindness.', chance: 'High' }
+            ]],
+            ['hearing loss', [
+                { name: 'Hearing Loss', info: 'Common due to chronic infections or loud noises.', chance: 'High' }
+            ]],
+            ['addiction', [
+                { name: 'Addiction Disorders', info: 'Alcoholism and substance abuse are growing problems.', chance: 'High' }
+            ]],
+            ['dental', [
+                { name: 'Oral Health Problems', info: 'High prevalence of dental caries and periodontal disease.', chance: 'High' }
+            ]],
+            ['back pain', [
+                { name: 'Chronic Back Pain', info: 'A very common ailment due to physical labor.', chance: 'High' }
+            ]],
+            ['allergies', [
+                { name: 'Skin Allergies and Eczema', info: 'Allergic reactions from exposure to various environmental factors.', chance: 'High' }
+            ]],
+            ['rheumatic fever', [
+                { name: 'Rheumatic Fever and Rheumatic Heart Disease', info: 'A serious complication of strep throat.', chance: 'High' }
+            ]],
+        ]);
+
+        // Function to add a message to the chat history
+        function addMessage(text, sender) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message-bubble');
+
+            if (sender === 'user') {
+                messageElement.classList.add('user-message');
+            } else {
+                messageElement.classList.add('bot-message');
+            }
+
+            messageElement.innerHTML = text;
+            chatHistory.appendChild(messageElement);
+            chatHistory.scrollTop = chatHistory.scrollHeight; // Auto-scroll to the bottom
+        }
+
+        // Function to handle bot's response
+        function getBotResponse(symptoms) {
+            const lowerCaseSymptoms = symptoms.toLowerCase();
+            let foundDiseases = [];
+
+            // Iterate over all possible symptoms to find a match
+            for (const [symptom, diseases] of diseaseData.entries()) {
+                if (lowerCaseSymptoms.includes(symptom)) {
+                    foundDiseases = diseases;
+                    break;
+                }
+            }
+            
+            setTimeout(() => {
+                if (foundDiseases.length > 0) {
+                    let responseText = `<span class="font-bold">Based on your symptoms, here are some possible diseases:</span>`;
+                    responseText += '<ul>';
+                    foundDiseases.forEach(disease => {
+                        responseText += `<li class="my-2"><strong>${disease.name}</strong> - Chance: <span class="font-bold text-red-600">${disease.chance}</span><br>${disease.info}</li>`;
+                    });
+                    responseText += '</ul>';
+                    addMessage(responseText, 'bot');
+                } else {
+                    addMessage("I'm sorry, I don't have information on that specific symptom. Please consult a medical professional for advice.", 'bot');
+                }
+                
+                addMessage('---', 'bot');
+                addMessage('<span class="disclaimer-text">Disclaimer: This information is for informational purposes only and is not a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of a qualified health provider with any questions you may have regarding a medical condition.</span>', 'bot');
+            }, 1000);
+        }
+
+        // Handle form submission
+        chatForm.addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent the form from submitting normally
+            const userMessage = messageInput.value.trim();
+
+            if (userMessage) {
+                addMessage(userMessage, 'user');
+                getBotResponse(userMessage);
+                messageInput.value = ''; // Clear the input field
+            }
+        });
+
+        // Start the conversation with a welcome message
+        window.onload = function() {
+            addMessage("Hello! I'm a simple symptom checker. Please enter a symptom, like 'fever' or 'cough', to get started.", 'bot');
+        };
+    </script>
+</body>
+</html>
